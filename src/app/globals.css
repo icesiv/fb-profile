@@ -1,8 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #020617;
+  --foreground: #f8fafc;
+  --brand-color: #3b82f6;
+  --target-size: 24px;
+  color-scheme: dark;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --target-size: 44px;
+  }
 }
 
 @theme inline {
@@ -12,15 +21,135 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  min-block-size: 100dvh;
 }
 
 body {
-  background: var(--background);
+  background: radial-gradient(
+    circle at top,
+    #0f172a 0%,
+    #020617 55%,
+    #020617 100%
+  );
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+  overflow-wrap: anywhere;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(1.5rem, 1.15rem + 1.6vw, 2.25rem);
+}
+
+p,
+li {
+  text-wrap: pretty;
+}
+
+:where(
+    button,
+    select,
+    textarea,
+    input:not([type="checkbox"], [type="radio"]),
+    [role="button"],
+    [role="switch"]
+  ) {
+  min-block-size: var(--target-size);
+  min-inline-size: var(--target-size);
+}
+
+:where(button) {
+  transition: box-shadow 150ms ease-out, scale 150ms ease-out,
+    background-color 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):active {
+    scale: 0.97;
+  }
+}
+
+:where(a, button, input, select, textarea, summary, canvas, [tabindex]):focus-visible {
+  outline: 2px solid #60a5fa;
+  outline-offset: 3px;
+}
+
+.visually-hidden:where(:not(:focus-within, :active)) {
+  position: absolute !important;
+  clip-path: inset(50%) !important;
+  overflow: hidden !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Brand-consistent range slider with @supports not fallback */
+input[type="range"] {
+  accent-color: var(--brand-color);
+}
+
+@supports not (accent-color: #3b82f6) {
+  input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+  }
+
+  input[type="range"]::-webkit-slider-runnable-track {
+    width: 100%;
+    height: 8px;
+    background: linear-gradient(
+      to right,
+      var(--brand-color, #3b82f6) var(--progress, 0%),
+      #334155 var(--progress, 0%)
+    );
+    border-radius: 9999px;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: var(--brand-color, #3b82f6);
+    cursor: pointer;
+    margin-top: -6px;
+  }
+
+  input[type="range"]::-moz-range-track {
+    width: 100%;
+    height: 8px;
+    background: #334155;
+    border-radius: 9999px;
+  }
+
+  input[type="range"]::-moz-range-progress {
+    background-color: var(--brand-color, #3b82f6);
+    height: 8px;
+    border-radius: 9999px;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border: none;
+    border-radius: 50%;
+    background: var(--brand-color, #3b82f6);
+    cursor: pointer;
+  }
 }
