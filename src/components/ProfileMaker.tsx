@@ -28,7 +28,7 @@ import {
 } from "@/lib/frameRenderer";
 
 const DEFAULT_TOP_RIGHT_LOGO = "/logos/logo-top-right.svg";
-const DEFAULT_BOTTOM_LEFT_LOGO = "/logos/logo-bottom-left.svg";
+const DEFAULT_BOTTOM_LEFT_LOGO = "/logos/logo-bottom-left.png";
 
 interface PointerPoint {
   x: number;
@@ -43,7 +43,7 @@ function getMidpoint(a: PointerPoint, b: PointerPoint): PointerPoint {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 
-const emptySubscribe = () => () => {};
+const emptySubscribe = () => () => { };
 
 function getCanShareSnapshot(): boolean {
   if (
@@ -531,19 +531,6 @@ export function ProfileMaker() {
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center gap-5 px-4 py-5 sm:px-6 sm:py-8">
-      <header className="flex flex-col items-center gap-1.5 text-center">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/25 bg-blue-500/10 px-3 py-1 text-xs font-medium tracking-wide text-blue-300">
-          {OUTPUT_SIZE} × {OUTPUT_SIZE} px • Facebook Profile Ready
-        </span>
-        <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
-          Profile Frame Maker
-        </h1>
-        <p className="max-w-lg text-sm text-slate-300">
-          Snap or upload a photo, drag and zoom to fit inside the dual-logo
-          frame, and download a crisp square Facebook profile image.
-        </p>
-      </header>
-
       <main className="grid grid-cols-1 items-start gap-6 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] md:gap-8">
         {/* Interactive Frame Stage */}
         <section
@@ -558,11 +545,10 @@ export function ProfileMaker() {
             }}
             onDragLeave={() => setIsDraggingOver(false)}
             onDrop={handleDrop}
-            className={`relative aspect-square w-full overflow-hidden rounded-2xl border bg-slate-900 shadow-2xl transition-colors ${
-              isDraggingOver
-                ? "border-blue-400 ring-2 ring-blue-400/40"
-                : "border-slate-700/80"
-            }`}
+            className={`relative aspect-square w-full overflow-hidden rounded-2xl border bg-slate-900 shadow-2xl transition-colors ${isDraggingOver
+              ? "border-blue-400 ring-2 ring-blue-400/40"
+              : "border-slate-700/80"
+              }`}
           >
             <canvas
               ref={canvasRef}
@@ -578,9 +564,8 @@ export function ProfileMaker() {
               onPointerUp={handlePointerUpOrCancel}
               onPointerCancel={handlePointerUpOrCancel}
               onKeyDown={handleStageKeyDown}
-              className={`block h-full w-full select-none touch-none ${
-                photo ? "cursor-grab active:cursor-grabbing" : "cursor-default"
-              }`}
+              className={`block h-full w-full select-none touch-none ${photo ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+                }`}
             />
 
             {!photo && (
@@ -637,28 +622,6 @@ export function ProfileMaker() {
             )}
           </div>
 
-          <div className="flex items-center justify-between gap-3 px-1">
-            <span className="text-xs text-slate-400">
-              {showCircleGuide
-                ? "Circle guide shows Facebook's avatar crop (exports full square)"
-                : "Showing full 1:1 square frame"}
-            </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={showCircleGuide}
-              onClick={() => setShowCircleGuide((v) => !v)}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
-            >
-              <span
-                aria-hidden="true"
-                className={`inline-block h-2.5 w-2.5 rounded-full ${
-                  showCircleGuide ? "bg-blue-400" : "bg-slate-500"
-                }`}
-              />
-              FB Circle Guide
-            </button>
-          </div>
         </section>
 
         {/* Controls Panel */}
@@ -883,66 +846,6 @@ export function ProfileMaker() {
                 "Processed locally on your device — photos are never uploaded."}
             </p>
           </div>
-
-          {/* Optional custom logos override */}
-          <details className="rounded-xl border border-slate-800 bg-slate-950/60 px-3.5 py-2.5 text-xs text-slate-300">
-            <summary className="cursor-pointer font-medium text-slate-200 select-none">
-              Customize Frame Logos (Optional)
-            </summary>
-            <div className="mt-3 flex flex-col gap-2.5">
-              <p className="text-slate-400">
-                Swap either corner logo for this session, or replace{" "}
-                <code className="rounded bg-slate-800 px-1 py-0.5 text-slate-200">
-                  public/logos/
-                </code>{" "}
-                files in the project.
-              </p>
-
-              <input
-                ref={topRightLogoInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => void handleCustomLogoChange("topRight", e)}
-                className="visually-hidden"
-                aria-label="Upload custom top-right logo"
-              />
-              <input
-                ref={bottomLeftLogoInputRef}
-                type="file"
-                accept="image/*"
-                onChange={(e) => void handleCustomLogoChange("bottomLeft", e)}
-                className="visually-hidden"
-                aria-label="Upload custom bottom-left logo"
-              />
-
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => topRightLogoInputRef.current?.click()}
-                  className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-2 text-xs font-medium text-slate-100 hover:bg-slate-700"
-                >
-                  Top-Right Logo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => bottomLeftLogoInputRef.current?.click()}
-                  className="rounded-lg border border-slate-700 bg-slate-800 px-2.5 py-2 text-xs font-medium text-slate-100 hover:bg-slate-700"
-                >
-                  Bottom-Left Logo
-                </button>
-              </div>
-
-              {(hasCustomTopRight || hasCustomBottomLeft) && (
-                <button
-                  type="button"
-                  onClick={() => void resetLogos()}
-                  className="self-start text-xs font-medium text-blue-400 hover:underline"
-                >
-                  Restore default brand logos
-                </button>
-              )}
-            </div>
-          </details>
         </section>
       </main>
 
