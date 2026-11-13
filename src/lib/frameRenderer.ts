@@ -200,7 +200,7 @@ export function renderFramedProfile(
 
   if (bottomLeftLogo && bottomLeftLogo.naturalWidth > 0) {
     const box = fitLogoBox(bottomLeftLogo, maxLogoW, maxLogoH);
-    const x = cornerMargin;
+    const x = size * 0.18;
     const y = size - cornerMargin - box.height;
     ctx.save();
     ctx.shadowColor = "rgba(15, 23, 42, 0.35)";
