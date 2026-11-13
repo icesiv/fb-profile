@@ -22,9 +22,7 @@ export interface TransformState {
 export interface RenderFrameOptions {
   photo: HTMLImageElement | null;
   transform: TransformState;
-  topRightLogo: HTMLImageElement | null;
-  bottomLeftLogo: HTMLImageElement | null;
-  showCircleGuide: boolean;
+  cover: HTMLImageElement | null;
 }
 
 export const DEFAULT_TRANSFORM: TransformState = {
@@ -92,20 +90,6 @@ export function clampTransform(
   };
 }
 
-function fitLogoBox(
-  logo: HTMLImageElement,
-  maxWidth: number,
-  maxHeight: number
-): { width: number; height: number } {
-  const nw = logo.naturalWidth || 180;
-  const nh = logo.naturalHeight || 180;
-  const scale = Math.min(maxWidth / nw, maxHeight / nh);
-  return {
-    width: nw * scale,
-    height: nh * scale,
-  };
-}
-
 /**
  * Renders the square framed profile image onto a 2D canvas context.
  * Uses identical normalized math for both the live preview and 1080x1080 export.
@@ -115,8 +99,7 @@ export function renderFramedProfile(
   size: number,
   options: RenderFrameOptions
 ): void {
-  const { photo, transform, topRightLogo, bottomLeftLogo, showCircleGuide } =
-    options;
+  const { photo, transform, cover } = options;
 
   ctx.save();
   ctx.clearRect(0, 0, size, size);
@@ -168,66 +151,12 @@ export function renderFramedProfile(
     }
   }
 
-  // Subtle decorative frame border inside the square
-  const frameInset = size * 0.015;
-  ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
-  ctx.lineWidth = Math.max(1.5, size * 0.004);
-  ctx.strokeRect(
-    frameInset,
-    frameInset,
-    size - frameInset * 2,
-    size - frameInset * 2
-  );
-  ctx.restore();
-
-  // Facebook circle-safe margin (13%) keeps both logos visible inside the circular avatar crop
-  const cornerMargin = size * 0.13;
-  const maxLogoW = size * 0.22;
-  const maxLogoH = size * 0.16;
-
-  if (topRightLogo && topRightLogo.naturalWidth > 0) {
-    const box = fitLogoBox(topRightLogo, maxLogoW, maxLogoH);
-    const x = size - cornerMargin - box.width;
-    const y = cornerMargin;
+  // Full-bleed transparent frame cover overlay on top
+  if (cover && cover.naturalWidth > 0) {
     ctx.save();
-    ctx.shadowColor = "rgba(15, 23, 42, 0.35)";
-    ctx.shadowBlur = size * 0.02;
-    ctx.shadowOffsetY = size * 0.006;
-    ctx.drawImage(topRightLogo, x, y, box.width, box.height);
-    ctx.restore();
-  }
-
-  if (bottomLeftLogo && bottomLeftLogo.naturalWidth > 0) {
-    const box = fitLogoBox(bottomLeftLogo, maxLogoW, maxLogoH);
-    const x = size * 0.18;
-    const y = size - cornerMargin - box.height;
-    ctx.save();
-    ctx.shadowColor = "rgba(15, 23, 42, 0.35)";
-    ctx.shadowBlur = size * 0.02;
-    ctx.shadowOffsetY = size * 0.006;
-    ctx.drawImage(bottomLeftLogo, x, y, box.width, box.height);
-    ctx.restore();
-  }
-
-  // Optional editor-only Facebook circular crop preview overlay (never included in download)
-  if (showCircleGuide) {
-    const center = size / 2;
-    const radius = size / 2 - size * 0.004;
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.rect(0, 0, size, size);
-    ctx.arc(center, center, radius, 0, Math.PI * 2, true);
-    ctx.fillStyle = "rgba(15, 23, 42, 0.48)";
-    ctx.fill("evenodd");
-
-    ctx.beginPath();
-    ctx.arc(center, center, radius, 0, Math.PI * 2);
-    ctx.setLineDash([Math.max(4, size * 0.015), Math.max(4, size * 0.012)]);
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
-    ctx.lineWidth = Math.max(1.5, size * 0.004);
-    ctx.stroke();
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(cover, 0, 0, size, size);
     ctx.restore();
   }
 
@@ -246,8 +175,7 @@ export function loadImageFromSrc(src: string): Promise<HTMLImageElement> {
 export async function exportFramedPngBlob(options: {
   photo: HTMLImageElement;
   transform: TransformState;
-  topRightLogo: HTMLImageElement | null;
-  bottomLeftLogo: HTMLImageElement | null;
+  cover: HTMLImageElement | null;
 }): Promise<Blob> {
   const canvas = document.createElement("canvas");
   canvas.width = OUTPUT_SIZE;
@@ -260,9 +188,7 @@ export async function exportFramedPngBlob(options: {
   renderFramedProfile(ctx, OUTPUT_SIZE, {
     photo: options.photo,
     transform: options.transform,
-    topRightLogo: options.topRightLogo,
-    bottomLeftLogo: options.bottomLeftLogo,
-    showCircleGuide: false,
+    cover: options.cover,
   });
 
   return new Promise((resolve, reject) => {
@@ -279,4 +205,3 @@ export async function exportFramedPngBlob(options: {
     );
   });
 }
-

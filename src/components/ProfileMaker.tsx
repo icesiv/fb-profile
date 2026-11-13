@@ -27,8 +27,7 @@ import {
   type TransformState,
 } from "@/lib/frameRenderer";
 
-const DEFAULT_TOP_RIGHT_LOGO = "/logos/logo-top-right.svg";
-const DEFAULT_BOTTOM_LEFT_LOGO = "/logos/logo-bottom-left.png";
+const DEFAULT_COVER_SRC = "/logos/cover.png";
 
 interface PointerPoint {
   x: number;
@@ -43,7 +42,7 @@ function getMidpoint(a: PointerPoint, b: PointerPoint): PointerPoint {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
 }
 
-const emptySubscribe = () => () => { };
+const emptySubscribe = () => () => {};
 
 function getCanShareSnapshot(): boolean {
   if (
@@ -67,24 +66,12 @@ export function ProfileMaker() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nativeCameraInputRef = useRef<HTMLInputElement>(null);
-  const topRightLogoInputRef = useRef<HTMLInputElement>(null);
-  const bottomLeftLogoInputRef = useRef<HTMLInputElement>(null);
 
   const photoUrlRef = useRef<string | null>(null);
-  const customLogoUrlsRef = useRef<{ topRight?: string; bottomLeft?: string }>(
-    {}
-  );
 
   const [photo, setPhoto] = useState<HTMLImageElement | null>(null);
   const [photoDims, setPhotoDims] = useState<ImageDimensions | null>(null);
-  const [topRightLogo, setTopRightLogo] = useState<HTMLImageElement | null>(
-    null
-  );
-  const [bottomLeftLogo, setBottomLeftLogo] = useState<HTMLImageElement | null>(
-    null
-  );
-  const [hasCustomTopRight, setHasCustomTopRight] = useState(false);
-  const [hasCustomBottomLeft, setHasCustomBottomLeft] = useState(false);
+  const [cover, setCover] = useState<HTMLImageElement | null>(null);
 
   const [transform, setTransform] = useState<TransformState>(DEFAULT_TRANSFORM);
   const transformRef = useRef<TransformState>(DEFAULT_TRANSFORM);
@@ -93,7 +80,6 @@ export function ProfileMaker() {
   }, [transform]);
 
   const [stageSize, setStageSize] = useState(360);
-  const [showCircleGuide, setShowCircleGuide] = useState(true);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -112,23 +98,18 @@ export function ProfileMaker() {
     midpoint: PointerPoint;
   } | null>(null);
 
-  // Load default logos on mount
+  // Load cover overlay on mount
   useEffect(() => {
     let cancelled = false;
-    const customLogoUrls = customLogoUrlsRef.current;
 
-    void Promise.all([
-      loadImageFromSrc(DEFAULT_TOP_RIGHT_LOGO),
-      loadImageFromSrc(DEFAULT_BOTTOM_LEFT_LOGO),
-    ])
-      .then(([tr, bl]) => {
+    void loadImageFromSrc(DEFAULT_COVER_SRC)
+      .then((coverImg) => {
         if (cancelled) return;
-        setTopRightLogo(tr);
-        setBottomLeftLogo(bl);
+        setCover(coverImg);
       })
       .catch(() => {
         if (!cancelled) {
-          setStatusMessage("Could not load default frame logos.");
+          setStatusMessage("Could not load frame cover overlay.");
         }
       });
 
@@ -136,12 +117,6 @@ export function ProfileMaker() {
       cancelled = true;
       if (photoUrlRef.current) {
         URL.revokeObjectURL(photoUrlRef.current);
-      }
-      if (customLogoUrls.topRight) {
-        URL.revokeObjectURL(customLogoUrls.topRight);
-      }
-      if (customLogoUrls.bottomLeft) {
-        URL.revokeObjectURL(customLogoUrls.bottomLeft);
       }
     };
   }, []);
@@ -182,11 +157,9 @@ export function ProfileMaker() {
     renderFramedProfile(ctx, pixelSize, {
       photo,
       transform,
-      topRightLogo,
-      bottomLeftLogo,
-      showCircleGuide,
+      cover,
     });
-  }, [photo, transform, topRightLogo, bottomLeftLogo, showCircleGuide, stageSize]);
+  }, [photo, transform, cover, stageSize]);
 
   const applyTransform = useCallback(
     (updater: (prev: TransformState) => TransformState) => {
@@ -232,64 +205,6 @@ export function ProfileMaker() {
       loadPhotoFile(file);
     }
     e.target.value = "";
-  };
-
-  const handleCustomLogoChange = async (
-    slot: "topRight" | "bottomLeft",
-    e: ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-
-    const url = URL.createObjectURL(file);
-    try {
-      const img = await loadImageFromSrc(url);
-      if (slot === "topRight") {
-        if (customLogoUrlsRef.current.topRight) {
-          URL.revokeObjectURL(customLogoUrlsRef.current.topRight);
-        }
-        customLogoUrlsRef.current.topRight = url;
-        setTopRightLogo(img);
-        setHasCustomTopRight(true);
-        setStatusMessage("Updated top-right logo.");
-      } else {
-        if (customLogoUrlsRef.current.bottomLeft) {
-          URL.revokeObjectURL(customLogoUrlsRef.current.bottomLeft);
-        }
-        customLogoUrlsRef.current.bottomLeft = url;
-        setBottomLeftLogo(img);
-        setHasCustomBottomLeft(true);
-        setStatusMessage("Updated bottom-left logo.");
-      }
-    } catch {
-      URL.revokeObjectURL(url);
-      setStatusMessage("Could not load that logo image.");
-    }
-  };
-
-  const resetLogos = async () => {
-    try {
-      const [tr, bl] = await Promise.all([
-        loadImageFromSrc(DEFAULT_TOP_RIGHT_LOGO),
-        loadImageFromSrc(DEFAULT_BOTTOM_LEFT_LOGO),
-      ]);
-      if (customLogoUrlsRef.current.topRight) {
-        URL.revokeObjectURL(customLogoUrlsRef.current.topRight);
-        customLogoUrlsRef.current.topRight = undefined;
-      }
-      if (customLogoUrlsRef.current.bottomLeft) {
-        URL.revokeObjectURL(customLogoUrlsRef.current.bottomLeft);
-        customLogoUrlsRef.current.bottomLeft = undefined;
-      }
-      setTopRightLogo(tr);
-      setBottomLeftLogo(bl);
-      setHasCustomTopRight(false);
-      setHasCustomBottomLeft(false);
-      setStatusMessage("Restored default brand logos.");
-    } catch {
-      setStatusMessage("Failed to restore default logos.");
-    }
   };
 
   // Non-passive wheel listener for smooth zoom toward cursor
@@ -467,8 +382,7 @@ export function ProfileMaker() {
       const blob = await exportFramedPngBlob({
         photo,
         transform: transformRef.current,
-        topRightLogo,
-        bottomLeftLogo,
+        cover,
       });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -493,8 +407,7 @@ export function ProfileMaker() {
       const blob = await exportFramedPngBlob({
         photo,
         transform: transformRef.current,
-        topRightLogo,
-        bottomLeftLogo,
+        cover,
       });
       const file = new File(
         [blob],
@@ -545,10 +458,11 @@ export function ProfileMaker() {
             }}
             onDragLeave={() => setIsDraggingOver(false)}
             onDrop={handleDrop}
-            className={`relative aspect-square w-full overflow-hidden rounded-2xl border bg-slate-900 shadow-2xl transition-colors ${isDraggingOver
-              ? "border-blue-400 ring-2 ring-blue-400/40"
-              : "border-slate-700/80"
-              }`}
+            className={`relative aspect-square w-full overflow-hidden rounded-2xl border bg-slate-900 shadow-2xl transition-colors ${
+              isDraggingOver
+                ? "border-blue-400 ring-2 ring-blue-400/40"
+                : "border-slate-700/80"
+            }`}
           >
             <canvas
               ref={canvasRef}
@@ -557,15 +471,16 @@ export function ProfileMaker() {
               aria-label={
                 photo
                   ? "Interactive profile photo frame. Drag to move, pinch or scroll to zoom, or use arrow keys."
-                  : "Empty profile photo frame with top-right and bottom-left logos."
+                  : "Empty profile photo frame with cover overlay."
               }
               onPointerDown={handlePointerDown}
               onPointerMove={handlePointerMove}
               onPointerUp={handlePointerUpOrCancel}
               onPointerCancel={handlePointerUpOrCancel}
               onKeyDown={handleStageKeyDown}
-              className={`block h-full w-full select-none touch-none ${photo ? "cursor-grab active:cursor-grabbing" : "cursor-default"
-                }`}
+              className={`block h-full w-full select-none touch-none ${
+                photo ? "cursor-grab active:cursor-grabbing" : "cursor-default"
+              }`}
             />
 
             {!photo && (
@@ -621,7 +536,6 @@ export function ProfileMaker() {
               </div>
             )}
           </div>
-
         </section>
 
         {/* Controls Panel */}
